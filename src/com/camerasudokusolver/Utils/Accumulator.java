@@ -10,7 +10,7 @@ public class Accumulator {
 
     private final int maxAngle = 180;
 
-    public static final int stripFactor = 3;
+    public static final int stripFactor = 5;
 
     public int rhoSize;
     private int rhoOffset; //??
@@ -37,7 +37,9 @@ public class Accumulator {
     }
 
     public void Add(final int x, final int y, final int startAngle, final int endAngle) {
-        if (endAngle >= maxAngle) { return; }
+        if (endAngle >= maxAngle) {
+            return;
+        }
         for (int alpha = startAngle; alpha < endAngle; alpha++) {
             int rho = (int) (cosAngle[alpha] * x + sinAngle[alpha] * y) + rhoOffset;
 
