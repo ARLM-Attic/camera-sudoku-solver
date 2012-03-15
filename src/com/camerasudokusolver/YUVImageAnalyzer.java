@@ -33,6 +33,7 @@ public class YUVImageAnalyzer extends View {
 
     private Point pRT, pLT, pRB, pLB;
     private Point gridPoints[][] = new Point[10][10];
+    private int sudokuNums[][] = new int[9][9];
 
     private DebugInfo debugInfo;
 
@@ -88,6 +89,7 @@ public class YUVImageAnalyzer extends View {
                 /*
                 for (int i = 0; i < canvasWidth; i++) {
                     for (int j = 0; j < canvasHeight; j++) {
+                        //if (isBlackPixel[i][j]) {
                         if (isBlackChecked[i][j]) {
                             canvas.drawPoint(i, j, paintMagenta);
                         }
@@ -106,17 +108,22 @@ public class YUVImageAnalyzer extends View {
                 canvas.drawCircle(pRB.x, pRB.y, 3, paintMagenta);
                 canvas.drawCircle(pRT.x, pRT.y, 3, paintYellow);
                 //*/
-                /*
-                for (int i = 0; i < 10; i+=9) {
-                    for (int j = 0; j < 10; j+=9) {
-                        canvas.drawCircle(gridPoints[i][j].x, gridPoints[i][j].y, 3, paintGreen);
-                    }
-                }
-                //*/
+
                 //*
                 for (int i = 0; i < 10; i++) {
                     for (int j = 0; j < 10; j++) {
                         canvas.drawCircle(gridPoints[i][j].x, gridPoints[i][j].y, 3, paintOrange);
+                    }
+                }
+                //*/
+
+                //*/
+                for (int j = 0; j < 9; j++) {
+                    for (int i = 0; i < 9; i++) {
+                        if (sudokuNums[j][i] == 0) {
+                            canvas.drawLine(gridPoints[i][j + 1].x, gridPoints[i][j + 1].y, gridPoints[i + 1][j].x, gridPoints[i + 1][j].y, paintGreen);
+                            canvas.drawLine(gridPoints[i + 1][j + 1].x, gridPoints[i + 1][j + 1].y, gridPoints[i][j].x, gridPoints[i][j].y, paintGreen);
+                        }
                     }
                 }
                 //*/
@@ -262,16 +269,16 @@ public class YUVImageAnalyzer extends View {
         tempLine.rho = verticalLines[0].rho
                 + (verticalLines[9].rho - verticalLines[0].rho) / 3
                 - (verticalLines[9].rho - verticalLines[0].rho) / 26;
-        offsetBottom = pLB.y + (pRB.y - pLB.y) / 3 + (pLB.y - pLT.y) / 7;
-        offsetTop = pLT.y + (pRT.y - pLT.y) / 3 - (pLB.y - pLT.y) / 7;
+        offsetBottom = pLB.y + (pRB.y - pLB.y) / 3 - (pLB.y - pLT.y) / 7;
+        offsetTop = pLT.y + (pRT.y - pLT.y) / 3 + (pLB.y - pLT.y) / 7;
         verticalLines[3] = HoughTransform(tempLine, (verticalLines[9].rho - verticalLines[0].rho) / 13, offsetTop, offsetBottom, 2, true);
         //sixth
         tempLine.theta = verticalLines[0].theta + (verticalLines[9].theta - verticalLines[0].theta) * 2 / 3;
         tempLine.rho = verticalLines[0].rho
                 + (verticalLines[9].rho - verticalLines[0].rho) * 2 / 3
                 - (verticalLines[9].rho - verticalLines[0].rho) / 26;
-        offsetBottom = pLB.y + (pRB.y - pLB.y) * 2 / 3 + (pLB.y - pLT.y) / 7;
-        offsetTop = pLT.y + (pRT.y - pLT.y) * 2 / 3 - (pLB.y - pLT.y) / 7;
+        offsetBottom = pLB.y + (pRB.y - pLB.y) * 2 / 3 - (pLB.y - pLT.y) / 7;
+        offsetTop = pLT.y + (pRT.y - pLT.y) * 2 / 3 + (pLB.y - pLT.y) / 7;
         verticalLines[6] = HoughTransform(tempLine, (verticalLines[9].rho - verticalLines[0].rho) / 13, offsetTop, offsetBottom, 2, true);
 
         //HORIZONTAL
@@ -317,9 +324,44 @@ public class YUVImageAnalyzer extends View {
     }
 
     private boolean DoOCR() {
-
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                sudokuNums[i][j] = DoOCRCell(i, j);
+            }
+        }
 
         return true;
+    }
+
+    private int DoOCRCell(int xCell, int yCell) {
+        Point lt = gridPoints[yCell + 1][xCell];
+        Point rt = gridPoints[yCell + 1][xCell + 1];
+        Point lb = gridPoints[yCell][xCell];
+        Point rb = gridPoints[yCell][xCell + 1];
+
+        int cellWidth = rt.x - lt.x - 3;
+        int cellHeight = lt.y - lb.y - 3;
+
+        if (cellWidth < 5 || cellHeight < 9)
+            return -1;
+
+        // detect if cell is empty. How: sum the black pixels from the center of the cell. Sum must be greater than the threshold.
+        int sumBlack = 0;
+        for (int X = lt.x + 2 + cellWidth / 3; X < rt.x - 1 - cellWidth / 3; X++) {
+            int Y = lb.y + ((X - lt.x) * (rt.y - lt.y)) / (rt.x - lt.x);
+            for (int y = Y + 2 + cellHeight / 3; y < Y + (lt.y - lb.y) - 1 - cellHeight / 4; y++) {
+                int x = X - (lt.x - lb.x) - ((y - Y) * (lb.x - lt.x)) / (lt.y - lb.y);
+                //isBlackChecked[x][y] = true;
+                if (isBlackPixel[x][y])
+                    sumBlack++;
+            }
+        }
+        if (sumBlack < (cellWidth * cellHeight) / 31) {    // threshold between empty cell and cell with a digit inside. Obtained empirically.
+            return 0;
+        }
+
+
+        return 1;
     }
 
     private void InterpolateSudokuGridPoints() {
@@ -488,7 +530,7 @@ public class YUVImageAnalyzer extends View {
                 for (y = startLimit; y < endLimit; y++) { //TODO: += 2
                     x = (int) ((y * cosAngle + rho - rhoCenter) / sinAngle);
                     if (x > 0 && x < canvasWidth && y > 0 && y < canvasHeight) {
-                        isBlackChecked[x][y] = true;
+                        //isBlackChecked[x][y] = true;
                         if (isBlackPixel[x][y]) {
 
                             accumulator.Add(y, x, lineAngle - thetaOffset, lineAngle + thetaOffset);
@@ -501,7 +543,7 @@ public class YUVImageAnalyzer extends View {
                 for (x = startLimit; x < endLimit; x++) { //TODO: += 2
                     y = (int) ((x * cosAngle + rho - rhoCenter) / sinAngle);
                     if (x > 0 && x < canvasWidth && y > 0 && y < canvasHeight) {
-                        isBlackChecked[x][y] = true;
+                        //isBlackChecked[x][y] = true;
                         if (isBlackPixel[x][y]) {
 
                             accumulator.Add(x, y, lineAngle - thetaOffset, lineAngle + thetaOffset);

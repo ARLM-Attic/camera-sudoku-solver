@@ -11,7 +11,7 @@ public final class Constants {
     public int screenWidth = 480;
     public int screenHeight = 320;
 
-    public float localThresholdFactor = 0.97f;  //can variates 0.8 ... 1
+    public float localThresholdFactor = 0.92f;  //can variates 0.8 ... 1
 
     private Constants() {
     }
