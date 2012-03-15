@@ -82,43 +82,45 @@ public class YUVImageAnalyzer extends View {
         debugInfo.drawOnCanvasTime = date.getTime() - startTime;
 
         if (DetectAngle()) {
-            DetectWhiteBorder();
+            if (DetectWhiteBorder()) {
+                DoOCR();
 
-            /*
-            for (int i = 0; i < canvasWidth; i++) {
-                for (int j = 0; j < canvasHeight; j++) {
-                    if (isBlackChecked[i][j]) {
-                        canvas.drawPoint(i, j, paintMagenta);
+                /*
+                for (int i = 0; i < canvasWidth; i++) {
+                    for (int j = 0; j < canvasHeight; j++) {
+                        if (isBlackChecked[i][j]) {
+                            canvas.drawPoint(i, j, paintMagenta);
+                        }
                     }
                 }
-            }
-            //*/
-            /*
-            canvas.drawLine(pLB.x, pLB.y, pLT.x, pLT.y, paintMagenta);
-            canvas.drawLine(pLT.x, pLT.y, pRT.x, pRT.y, paintMagenta);
-            canvas.drawLine(pRT.x, pRT.y, pRB.x, pRB.y, paintMagenta);
-            canvas.drawLine(pRB.x, pRB.y, pLB.x, pLB.y, paintMagenta);
-            //*/
-            /*
-            canvas.drawCircle(pLB.x, pLB.y, 3, paintOrange);
-            canvas.drawCircle(pLT.x, pLT.y, 3, paintGreen);
-            canvas.drawCircle(pRB.x, pRB.y, 3, paintMagenta);
-            canvas.drawCircle(pRT.x, pRT.y, 3, paintYellow);
-            //*/
-            /*
-            for (int i = 0; i < 10; i+=9) {
-                for (int j = 0; j < 10; j+=9) {
-                    canvas.drawCircle(gridPoints[i][j].x, gridPoints[i][j].y, 3, paintGreen);
+                //*/
+                /*
+                canvas.drawLine(pLB.x, pLB.y, pLT.x, pLT.y, paintMagenta);
+                canvas.drawLine(pLT.x, pLT.y, pRT.x, pRT.y, paintMagenta);
+                canvas.drawLine(pRT.x, pRT.y, pRB.x, pRB.y, paintMagenta);
+                canvas.drawLine(pRB.x, pRB.y, pLB.x, pLB.y, paintMagenta);
+                //*/
+                /*
+                canvas.drawCircle(pLB.x, pLB.y, 3, paintOrange);
+                canvas.drawCircle(pLT.x, pLT.y, 3, paintGreen);
+                canvas.drawCircle(pRB.x, pRB.y, 3, paintMagenta);
+                canvas.drawCircle(pRT.x, pRT.y, 3, paintYellow);
+                //*/
+                /*
+                for (int i = 0; i < 10; i+=9) {
+                    for (int j = 0; j < 10; j+=9) {
+                        canvas.drawCircle(gridPoints[i][j].x, gridPoints[i][j].y, 3, paintGreen);
+                    }
                 }
-            }
-            //*/
-            //*
-            for (int i = 0; i < 10; i += 3) {
-                for (int j = 0; j < 10; j += 3) {
-                    canvas.drawCircle(gridPoints[i][j].x, gridPoints[i][j].y, 3, paintOrange);
+                //*/
+                //*
+                for (int i = 0; i < 10; i++) {
+                    for (int j = 0; j < 10; j++) {
+                        canvas.drawCircle(gridPoints[i][j].x, gridPoints[i][j].y, 3, paintOrange);
+                    }
                 }
+                //*/
             }
-            //*/
         }
 
         /*
@@ -242,17 +244,19 @@ public class YUVImageAnalyzer extends View {
 
     private boolean DetectSudokuLines(NormLine leftLine, NormLine rightLine,
                                       NormLine bottomLine, NormLine topLine) {
+        //TODO: check, if we detect square
+
         NormLine tempLine = new NormLine();
 
+        //VERTICAL
         //left
-        int offsetBottom = pLB.y - (pLB.y - pLT.y) / 9; //TODO: Math underground
+        int offsetBottom = pLB.y - (pLB.y - pLT.y) / 9;
         int offsetTop = pLT.y + (pLB.y - pLT.y) / 9;
         verticalLines[0] = HoughTransform(leftLine, (rightLine.rho - leftLine.rho) / 9, offsetTop, offsetBottom, 4, true);
         //right
         offsetBottom = pRB.y - (pRB.y - pRT.y) / 9;
         offsetTop = pRT.y + (pRB.y - pRT.y) / 9;
         verticalLines[9] = HoughTransform(rightLine, (leftLine.rho - rightLine.rho) / 9, offsetTop, offsetBottom, 4, true);
-        //*
         //third
         tempLine.theta = verticalLines[0].theta + (verticalLines[9].theta - verticalLines[0].theta) / 3;
         tempLine.rho = verticalLines[0].rho
@@ -269,7 +273,8 @@ public class YUVImageAnalyzer extends View {
         offsetBottom = pLB.y + (pRB.y - pLB.y) * 2 / 3 + (pLB.y - pLT.y) / 7;
         offsetTop = pLT.y + (pRT.y - pLT.y) * 2 / 3 - (pLB.y - pLT.y) / 7;
         verticalLines[6] = HoughTransform(tempLine, (verticalLines[9].rho - verticalLines[0].rho) / 13, offsetTop, offsetBottom, 2, true);
-        //*/
+
+        //HORIZONTAL
         //top
         int offsetLeft = pLT.x + (pRT.x - pLT.x) / 9;
         int offsetRight = pRT.x - (pRT.x - pLT.x) / 9;
@@ -278,7 +283,6 @@ public class YUVImageAnalyzer extends View {
         offsetLeft = pLB.x + (pRB.x - pLB.x) / 9;
         offsetRight = pRB.x - (pRB.x - pLB.x) / 9;
         horizontalLines[9] = HoughTransform(bottomLine, (topLine.rho - bottomLine.rho) / 9, offsetLeft, offsetRight, 4, false);
-        //*
         //third
         tempLine.theta = horizontalLines[0].theta + (horizontalLines[9].theta - horizontalLines[0].theta) / 3;
         tempLine.rho = horizontalLines[0].rho
@@ -295,16 +299,89 @@ public class YUVImageAnalyzer extends View {
         offsetLeft = pLB.x + (pLT.x - pLB.x) * 2 / 3 + (pRB.x - pLB.x) / 7;
         offsetRight = pRB.x + (pRT.x - pRB.x) * 2 / 3 - (pRB.x - pLB.x) / 7;
         horizontalLines[6] = HoughTransform(tempLine, (horizontalLines[9].rho - horizontalLines[0].rho) / 12, offsetLeft, offsetRight, 2, false);
-        //*/
-        //*
-        for (int y = 0; y < 10; y += 3) {
-            for (int x = 0; x < 10; x += 3) {
-                gridPoints[x][y] = InterceptionPoint(verticalLines[y], horizontalLines[x]);
+
+        for (int y = 0; y < 10; y++) {
+            for (int x = 0; x < 10; x++) {
+                if ((x % 3 == 0) && (y % 3 == 0)) {
+                    gridPoints[x][y] = InterceptionPoint(verticalLines[y], horizontalLines[x]);
+                } else {
+                    gridPoints[x][y] = new Point();
+                }
             }
         }
-        //*/
+
+        InterpolateSudokuGridPoints();
+
+        //TODO: check boundaries
+        return true;
+    }
+
+    private boolean DoOCR() {
+
 
         return true;
+    }
+
+    private void InterpolateSudokuGridPoints() {
+        for (int y = 0; y < 10; y += 3) {
+            //X
+            gridPoints[y][1].x = gridPoints[y][0].x + (gridPoints[y][3].x - gridPoints[y][0].x) / 3;
+            gridPoints[y][2].x = gridPoints[y][3].x - (gridPoints[y][3].x - gridPoints[y][0].x) / 3;
+            gridPoints[y][4].x = gridPoints[y][3].x + (gridPoints[y][6].x - gridPoints[y][3].x) / 3;
+            gridPoints[y][5].x = gridPoints[y][6].x - (gridPoints[y][6].x - gridPoints[y][3].x) / 3;
+            gridPoints[y][7].x = gridPoints[y][6].x + (gridPoints[y][9].x - gridPoints[y][6].x) / 3;
+            gridPoints[y][8].x = gridPoints[y][9].x - (gridPoints[y][9].x - gridPoints[y][6].x) / 3;
+            //Y
+            gridPoints[y][1].y = gridPoints[y][0].y + (gridPoints[y][3].y - gridPoints[y][0].y) / 3;
+            gridPoints[y][2].y = gridPoints[y][3].y - (gridPoints[y][3].y - gridPoints[y][0].y) / 3;
+            gridPoints[y][4].y = gridPoints[y][3].y + (gridPoints[y][6].y - gridPoints[y][3].y) / 3;
+            gridPoints[y][5].y = gridPoints[y][6].y - (gridPoints[y][6].y - gridPoints[y][3].y) / 3;
+            gridPoints[y][7].y = gridPoints[y][6].y + (gridPoints[y][9].y - gridPoints[y][6].y) / 3;
+            gridPoints[y][8].y = gridPoints[y][9].y - (gridPoints[y][9].y - gridPoints[y][6].y) / 3;
+        }
+
+        for (int x = 0; x < 10; x += 3) {
+            //X
+            gridPoints[1][x].x = gridPoints[0][x].x + (gridPoints[3][x].x - gridPoints[0][x].x) / 3;
+            gridPoints[2][x].x = gridPoints[3][x].x - (gridPoints[3][x].x - gridPoints[0][x].x) / 3;
+            gridPoints[4][x].x = gridPoints[3][x].x + (gridPoints[6][x].x - gridPoints[3][x].x) / 3;
+            gridPoints[5][x].x = gridPoints[6][x].x - (gridPoints[6][x].x - gridPoints[3][x].x) / 3;
+            gridPoints[7][x].x = gridPoints[6][x].x + (gridPoints[9][x].x - gridPoints[6][x].x) / 3;
+            gridPoints[8][x].x = gridPoints[9][x].x - (gridPoints[9][x].x - gridPoints[6][x].x) / 3;
+            //Y
+            gridPoints[1][x].y = gridPoints[0][x].y + (gridPoints[3][x].y - gridPoints[0][x].y) / 3;
+            gridPoints[2][x].y = gridPoints[3][x].y - (gridPoints[3][x].y - gridPoints[0][x].y) / 3;
+            gridPoints[4][x].y = gridPoints[3][x].y + (gridPoints[6][x].y - gridPoints[3][x].y) / 3;
+            gridPoints[5][x].y = gridPoints[6][x].y - (gridPoints[6][x].y - gridPoints[3][x].y) / 3;
+            gridPoints[7][x].y = gridPoints[6][x].y + (gridPoints[9][x].y - gridPoints[6][x].y) / 3;
+            gridPoints[8][x].y = gridPoints[9][x].y - (gridPoints[9][x].y - gridPoints[6][x].y) / 3;
+        }
+
+        for (int a = 1; a < 9; a++) {
+            if (a != 3 && a != 6) {
+                for (int b = 1; b < 9; b++) {
+                    if (b == 1) {
+                        gridPoints[a][b].x = gridPoints[a][0].x + (gridPoints[a][3].x - gridPoints[a][0].x) / 3;
+                        gridPoints[b][a].y = gridPoints[0][a].y + (gridPoints[3][a].y - gridPoints[0][a].y) / 3;
+                    } else if (b == 2) {
+                        gridPoints[a][b].x = gridPoints[a][3].x - (gridPoints[a][3].x - gridPoints[a][0].x) / 3;
+                        gridPoints[b][a].y = gridPoints[3][a].y - (gridPoints[3][a].y - gridPoints[0][a].y) / 3;
+                    } else if (b == 4) {
+                        gridPoints[a][b].x = gridPoints[a][3].x + (gridPoints[a][6].x - gridPoints[a][3].x) / 3;
+                        gridPoints[b][a].y = gridPoints[3][a].y + (gridPoints[6][a].y - gridPoints[3][a].y) / 3;
+                    } else if (b == 5) {
+                        gridPoints[a][b].x = gridPoints[a][6].x - (gridPoints[a][6].x - gridPoints[a][3].x) / 3;
+                        gridPoints[b][a].y = gridPoints[6][a].y - (gridPoints[6][a].y - gridPoints[3][a].y) / 3;
+                    } else if (b == 7) {
+                        gridPoints[a][b].x = gridPoints[a][6].x + (gridPoints[a][9].x - gridPoints[a][6].x) / 3;
+                        gridPoints[b][a].y = gridPoints[6][a].y + (gridPoints[9][a].y - gridPoints[6][a].y) / 3;
+                    } else if (b == 8) {
+                        gridPoints[a][b].x = gridPoints[a][9].x - (gridPoints[a][9].x - gridPoints[a][6].x) / 3;
+                        gridPoints[b][a].y = gridPoints[9][a].y - (gridPoints[9][a].y - gridPoints[6][a].y) / 3;
+                    }
+                }
+            }
+        }
     }
 
     private Point InterceptionPoint(final NormLine firstLine, final NormLine secondLine) {
