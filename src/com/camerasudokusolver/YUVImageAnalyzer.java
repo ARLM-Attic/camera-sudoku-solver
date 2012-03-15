@@ -16,11 +16,11 @@ import java.util.Date;
  * Date: 1/20/12
  */
 public class YUVImageAnalyzer extends View {
-	static public boolean readyForNextFrame;
+    static public boolean readyForNextFrame;
 
     private GrayscaleImage grayscaleImage;
     private boolean[][] isBlackPixel;
-	private boolean[][] isBlackChecked; //TODO: for debug
+    private boolean[][] isBlackChecked; //TODO: for debug
     final private int canvasWidth = Constants.getInstance().screenWidth;
     final private int canvasHeight = Constants.getInstance().screenHeight;
     final private int rhoCenter = (int) ((canvasHeight + canvasWidth) * Math.sqrt(2) / 2);
@@ -28,6 +28,8 @@ public class YUVImageAnalyzer extends View {
     private NormLine normLine;
 
     private NormLine mLeftLine, mRightLine, mTopLine, mBottomLine; //TODO: for debug
+    NormLine horizontalLines[] = new NormLine[10]; //TODO: for debug
+    NormLine verticalLines[] = new NormLine[10]; //TODO: for debug
 
     private Point pRT, pLT, pRB, pLB;
     private Point gridPoints[][] = new Point[10][10];
@@ -35,7 +37,7 @@ public class YUVImageAnalyzer extends View {
     private DebugInfo debugInfo;
 
     public YUVImageAnalyzer(final Context context) {
-		super(context);
+        super(context);
         debugInfo = new DebugInfo();
         normLine = new NormLine();
 
@@ -44,19 +46,18 @@ public class YUVImageAnalyzer extends View {
         mTopLine = new NormLine();
         mBottomLine = new NormLine();
 
-		readyForNextFrame = true;
-	}
+        readyForNextFrame = true;
+    }
 
-	@Override
-	protected void onDraw(final Canvas canvas) {
-		if (grayscaleImage == null)
-		{
-			readyForNextFrame = true;
-			return;
-		}
+    @Override
+    protected void onDraw(final Canvas canvas) {
+        if (grayscaleImage == null) {
+            readyForNextFrame = true;
+            return;
+        }
 
         Paint paintYellow = new Paint();
-		paintYellow.setStyle(Paint.Style.FILL);
+        paintYellow.setStyle(Paint.Style.FILL);
         paintYellow.setColor(Color.YELLOW);
 
         Paint paintGreen = new Paint();
@@ -64,28 +65,18 @@ public class YUVImageAnalyzer extends View {
         paintGreen.setColor(Color.GREEN);
 
         Paint paintMagenta = new Paint();
-		paintMagenta.setStyle(Paint.Style.FILL);
-		paintMagenta.setColor(Color.MAGENTA);
-        paintMagenta.setTextSize(18);
+        paintMagenta.setStyle(Paint.Style.FILL);
+        paintMagenta.setColor(Color.MAGENTA);
+        //paintMagenta.setTextSize(18);
 
-		Paint paintOrange = new Paint();
-		paintOrange.setStyle(Paint.Style.FILL);
-		paintOrange.setColor(Color.rgb(255, 210, 80));
+        Paint paintOrange = new Paint();
+        paintOrange.setStyle(Paint.Style.FILL);
+        paintOrange.setColor(Color.rgb(255, 210, 80));
 
         ConvertToBlackWhite();
 
         Date date = new Date();
         long startTime = date.getTime();
-
-		/*
-        for (int i = 0; i < canvasWidth; i++) {
-            for (int j = 0; j < canvasHeight; j++) {
-                if (isBlackChecked[i][j]) {
-                    canvas.drawPoint(i, j, paintMagenta);
-                }
-            }
-        }
-        //*/
 
         date = new Date();
         debugInfo.drawOnCanvasTime = date.getTime() - startTime;
@@ -93,14 +84,7 @@ public class YUVImageAnalyzer extends View {
         if (DetectAngle()) {
             DetectWhiteBorder();
 
-            for (int x = 0; x < canvasWidth; x++) {
-                int y = (int) ((mLeftLine.rho - rhoCenter + x * Math.cos(Math.toRadians(mLeftLine.theta))) / Math.sin(Math.toRadians(mLeftLine.theta)));
-                if (y >= 0 && y < canvasHeight) {
-                    canvas.drawPoint(x, y, paintGreen);
-                }
-            }
-
-	        /*
+            /*
             for (int i = 0; i < canvasWidth; i++) {
                 for (int j = 0; j < canvasHeight; j++) {
                     if (isBlackChecked[i][j]) {
@@ -110,10 +94,10 @@ public class YUVImageAnalyzer extends View {
             }
             //*/
             /*
-            canvas.drawLine(pLB.x, pLB.y, pLT.x, pLT.y, paintOrange);
-            canvas.drawLine(pLT.x, pLT.y, pRT.x, pRT.y, paintOrange);
-            canvas.drawLine(pRT.x, pRT.y, pRB.x, pRB.y, paintOrange);
-            canvas.drawLine(pRB.x, pRB.y, pLB.x, pLB.y, paintOrange);
+            canvas.drawLine(pLB.x, pLB.y, pLT.x, pLT.y, paintMagenta);
+            canvas.drawLine(pLT.x, pLT.y, pRT.x, pRT.y, paintMagenta);
+            canvas.drawLine(pRT.x, pRT.y, pRB.x, pRB.y, paintMagenta);
+            canvas.drawLine(pRB.x, pRB.y, pLB.x, pLB.y, paintMagenta);
             //*/
             /*
             canvas.drawCircle(pLB.x, pLB.y, 3, paintOrange);
@@ -121,30 +105,33 @@ public class YUVImageAnalyzer extends View {
             canvas.drawCircle(pRB.x, pRB.y, 3, paintMagenta);
             canvas.drawCircle(pRT.x, pRT.y, 3, paintYellow);
             //*/
-	        /*
+            /*
             for (int i = 0; i < 10; i+=9) {
                 for (int j = 0; j < 10; j+=9) {
                     canvas.drawCircle(gridPoints[i][j].x, gridPoints[i][j].y, 3, paintGreen);
                 }
             }
             //*/
-	        //*
-	        canvas.drawCircle(gridPoints[0][0].x / 10, gridPoints[0][0].y / 10, 3, paintGreen);
-	        canvas.drawCircle(gridPoints[0][9].x / 10, gridPoints[0][9].y / 10, 3, paintYellow);
-	        canvas.drawCircle(gridPoints[9][0].x / 10, gridPoints[9][0].y / 10, 3, paintOrange);
-	        canvas.drawCircle(gridPoints[9][9].x / 10, gridPoints[9][9].y / 10, 3, paintMagenta);
-	        //*/
+            //*
+            for (int i = 0; i < 10; i += 3) {
+                for (int j = 0; j < 10; j += 3) {
+                    canvas.drawCircle(gridPoints[i][j].x, gridPoints[i][j].y, 3, paintOrange);
+                }
+            }
+            //*/
         }
 
+        /*
 		canvas.drawText("Parse YUV: " + debugInfo.parseYUVImageTime + " ms", 20, 20, paintMagenta);
         canvas.drawText("Black&White: " + debugInfo.convertToBlackWhiteTime + " ms", 20, 40, paintMagenta);
         canvas.drawText("LineVoting: " + debugInfo.detectAngleTime + " ms. Angle: " + normLine.theta, 20, 60, paintMagenta);
         canvas.drawText("Draw: " + debugInfo.drawOnCanvasTime + " ms", 20, 80, paintMagenta);
+        //*/
 
         super.onDraw(canvas);
-		readyForNextFrame = true;
+        readyForNextFrame = true;
 
-	} // end onDraw method
+    } // end onDraw method
 
     private boolean DetectAngle() {
         Date date = new Date();
@@ -255,69 +242,67 @@ public class YUVImageAnalyzer extends View {
 
     private boolean DetectSudokuLines(NormLine leftLine, NormLine rightLine,
                                       NormLine bottomLine, NormLine topLine) {
-        NormLine horizontalLines[] = new NormLine[10];
-        NormLine verticalLines[] = new NormLine[10];
         NormLine tempLine = new NormLine();
 
         //left
-        int offsetBottom = pLB.y + (pLB.y - pLT.y) / 9; //TODO: Math underground
-        int offsetTop = pLT.y - (pLB.y - pLT.y) / 9;
+        int offsetBottom = pLB.y - (pLB.y - pLT.y) / 9; //TODO: Math underground
+        int offsetTop = pLT.y + (pLB.y - pLT.y) / 9;
         verticalLines[0] = HoughTransform(leftLine, (rightLine.rho - leftLine.rho) / 9, offsetTop, offsetBottom, 4, true);
         //right
-        offsetBottom = pRB.y + (pRB.y - pRT.y) / 9;
-        offsetTop = pRT.y - (pRB.y - pRT.y) / 9;
+        offsetBottom = pRB.y - (pRB.y - pRT.y) / 9;
+        offsetTop = pRT.y + (pRB.y - pRT.y) / 9;
         verticalLines[9] = HoughTransform(rightLine, (leftLine.rho - rightLine.rho) / 9, offsetTop, offsetBottom, 4, true);
-	    /*
+        //*
         //third
         tempLine.theta = verticalLines[0].theta + (verticalLines[9].theta - verticalLines[0].theta) / 3;
         tempLine.rho = verticalLines[0].rho
-                       + (verticalLines[9].rho - verticalLines[0].rho) / 3
-                       - (verticalLines[9].rho - verticalLines[0].rho) / 26;
+                + (verticalLines[9].rho - verticalLines[0].rho) / 3
+                - (verticalLines[9].rho - verticalLines[0].rho) / 26;
         offsetBottom = pLB.y + (pRB.y - pLB.y) / 3 + (pLB.y - pLT.y) / 7;
         offsetTop = pLT.y + (pRT.y - pLT.y) / 3 - (pLB.y - pLT.y) / 7;
         verticalLines[3] = HoughTransform(tempLine, (verticalLines[9].rho - verticalLines[0].rho) / 13, offsetTop, offsetBottom, 2, true);
         //sixth
         tempLine.theta = verticalLines[0].theta + (verticalLines[9].theta - verticalLines[0].theta) * 2 / 3;
         tempLine.rho = verticalLines[0].rho
-                       + (verticalLines[9].rho - verticalLines[0].rho) * 2 / 3
-                       - (verticalLines[9].rho - verticalLines[0].rho) / 26;
+                + (verticalLines[9].rho - verticalLines[0].rho) * 2 / 3
+                - (verticalLines[9].rho - verticalLines[0].rho) / 26;
         offsetBottom = pLB.y + (pRB.y - pLB.y) * 2 / 3 + (pLB.y - pLT.y) / 7;
         offsetTop = pLT.y + (pRT.y - pLT.y) * 2 / 3 - (pLB.y - pLT.y) / 7;
         verticalLines[6] = HoughTransform(tempLine, (verticalLines[9].rho - verticalLines[0].rho) / 13, offsetTop, offsetBottom, 2, true);
-        */
+        //*/
         //top
-        int offsetLeft = pLT.x - (pRT.x - pLT.x) / 9;
-        int offsetRight = pRT.x + (pRT.x - pLT.x) / 9;
-        horizontalLines[0] = HoughTransform(topLine, (bottomLine.rho - topLine.rho) / 11, offsetLeft, offsetRight, 4, false);
+        int offsetLeft = pLT.x + (pRT.x - pLT.x) / 9;
+        int offsetRight = pRT.x - (pRT.x - pLT.x) / 9;
+        horizontalLines[0] = HoughTransform(topLine, (bottomLine.rho - topLine.rho) / 9, offsetLeft, offsetRight, 4, false);
         //bottom
-        offsetLeft = pLB.x - (pRB.x - pLB.x) / 9;
-        offsetRight = pRB.x + (pRB.x - pLB.x) / 9;
+        offsetLeft = pLB.x + (pRB.x - pLB.x) / 9;
+        offsetRight = pRB.x - (pRB.x - pLB.x) / 9;
         horizontalLines[9] = HoughTransform(bottomLine, (topLine.rho - bottomLine.rho) / 9, offsetLeft, offsetRight, 4, false);
-	    /*
+        //*
         //third
         tempLine.theta = horizontalLines[0].theta + (horizontalLines[9].theta - horizontalLines[0].theta) / 3;
         tempLine.rho = horizontalLines[0].rho
-                       + (horizontalLines[9].rho - horizontalLines[0].rho) / 3
-                       - (horizontalLines[9].rho - horizontalLines[0].rho) / 25;
+                + (horizontalLines[9].rho - horizontalLines[0].rho) / 3
+                - (horizontalLines[9].rho - horizontalLines[0].rho) / 25;
         offsetLeft = pLB.x + (pLT.x - pLB.x) / 3 + (pRB.x - pLB.x) / 7;
         offsetRight = pRB.x + (pRT.x - pRB.x) / 3 - (pRB.x - pLB.x) / 7;
         horizontalLines[3] = HoughTransform(tempLine, (horizontalLines[9].rho - horizontalLines[0].rho) / 12, offsetLeft, offsetRight, 2, false);
         //sixth
-        tempLine.theta = horizontalLines[0].theta + (horizontalLines[9].theta - horizontalLines[0].theta)* 2 / 3;
+        tempLine.theta = horizontalLines[0].theta + (horizontalLines[9].theta - horizontalLines[0].theta) * 2 / 3;
         tempLine.rho = horizontalLines[0].rho
-                       + (horizontalLines[9].rho - horizontalLines[0].rho) * 2 / 3
-                       - (horizontalLines[9].rho - horizontalLines[0].rho) / 25;
-        offsetLeft = pLB.x + (pLT.x-pLB.x) * 2 / 3 + (pRB.x - pLB.x) / 7;
-        offsetRight = pRB.x + (pRT.x-pRB.x) * 2 / 3 - (pRB.x - pLB.x) / 7;
+                + (horizontalLines[9].rho - horizontalLines[0].rho) * 2 / 3
+                - (horizontalLines[9].rho - horizontalLines[0].rho) / 25;
+        offsetLeft = pLB.x + (pLT.x - pLB.x) * 2 / 3 + (pRB.x - pLB.x) / 7;
+        offsetRight = pRB.x + (pRT.x - pRB.x) * 2 / 3 - (pRB.x - pLB.x) / 7;
         horizontalLines[6] = HoughTransform(tempLine, (horizontalLines[9].rho - horizontalLines[0].rho) / 12, offsetLeft, offsetRight, 2, false);
-        */
-        for (int y = 0; y < 10; y+=9) {
-            for (int x = 0; x < 10; x+=9) {
+        //*/
+        //*
+        for (int y = 0; y < 10; y += 3) {
+            for (int x = 0; x < 10; x += 3) {
                 gridPoints[x][y] = InterceptionPoint(verticalLines[y], horizontalLines[x]);
             }
         }
-
-
+        //*/
 
         return true;
     }
@@ -355,11 +340,15 @@ public class YUVImageAnalyzer extends View {
                     if ((RECT * 2 + 1) > sum) {
                         whiteLen++;
                     } else {
-                        if (maxWhiteLen < whiteLen) { maxWhiteLen = whiteLen; }
+                        if (maxWhiteLen < whiteLen) {
+                            maxWhiteLen = whiteLen;
+                        }
                         whiteLen = 0;
                     }
                 }
-                if (maxWhiteLen < whiteLen) { maxWhiteLen = whiteLen; }
+                if (maxWhiteLen < whiteLen) {
+                    maxWhiteLen = whiteLen;
+                }
             }
             whiteLength[rho] = maxWhiteLen;
         }
@@ -381,11 +370,15 @@ public class YUVImageAnalyzer extends View {
                     if ((RECT * 2 + 1) > sum) {
                         whiteLen++;
                     } else {
-                        if (maxWhiteLen < whiteLen) { maxWhiteLen = whiteLen; }
+                        if (maxWhiteLen < whiteLen) {
+                            maxWhiteLen = whiteLen;
+                        }
                         whiteLen = 0;
                     }
                 }
-                if (maxWhiteLen < whiteLen) { maxWhiteLen = whiteLen; }
+                if (maxWhiteLen < whiteLen) {
+                    maxWhiteLen = whiteLen;
+                }
             }
             whiteLength[rho] = maxWhiteLen;
         }
@@ -411,16 +404,17 @@ public class YUVImageAnalyzer extends View {
 
         final double sinAngle = Math.sin(Math.toRadians(inputLine.theta));
         final double cosAngle = Math.cos(Math.toRadians(inputLine.theta));
+        int lineAngle = 180 - inputLine.theta;
 
-	    if (isVertical) {
+        if (isVertical) {
             for (int rho = start; rho < end; rho++) {
                 for (y = startLimit; y < endLimit; y++) { //TODO: += 2
-                    x = (int) ((y * sinAngle + rho - rhoCenter) / cosAngle);
+                    x = (int) ((y * cosAngle + rho - rhoCenter) / sinAngle);
                     if (x > 0 && x < canvasWidth && y > 0 && y < canvasHeight) {
                         isBlackChecked[x][y] = true;
-                        if (isBlackPixel[x][y]){
+                        if (isBlackPixel[x][y]) {
 
-                            accumulator.Add(x, y, inputLine.theta - thetaOffset, inputLine.theta + thetaOffset);
+                            accumulator.Add(y, x, lineAngle - thetaOffset, lineAngle + thetaOffset);
                         }
                     }
                 }
@@ -431,18 +425,18 @@ public class YUVImageAnalyzer extends View {
                     y = (int) ((x * cosAngle + rho - rhoCenter) / sinAngle);
                     if (x > 0 && x < canvasWidth && y > 0 && y < canvasHeight) {
                         isBlackChecked[x][y] = true;
-                        if (isBlackPixel[x][y]){
+                        if (isBlackPixel[x][y]) {
 
-                            accumulator.Add(x, y, inputLine.theta - thetaOffset, inputLine.theta + thetaOffset);
+                            accumulator.Add(x, y, lineAngle - thetaOffset, lineAngle + thetaOffset);
                         }
                     }
                 }
             }
         }
-        
+
         long vote = -1;
         for (int rho = accumulator.rhoLow; rho < accumulator.rhoHigh; rho++) {
-            for (int theta = inputLine.theta - thetaOffset; theta <= inputLine.theta + thetaOffset; theta++) {
+            for (int theta = lineAngle - thetaOffset; theta <= lineAngle + thetaOffset; theta++) {
                 if (accumulator.votes[rho][theta] > vote) {
                     vote = accumulator.votes[rho][theta];
                     resultLine.rho = rho;
@@ -450,8 +444,8 @@ public class YUVImageAnalyzer extends View {
                 }
             }
         }
-
-	    return resultLine;
+        resultLine.theta = 180 - resultLine.theta;
+        return resultLine;
     }
 
     private int sumBlackPixel(final int RECT, final int x, final int y) {
@@ -471,7 +465,7 @@ public class YUVImageAnalyzer extends View {
         long startTime = date.getTime();
 
         isBlackPixel = new boolean[canvasWidth][canvasHeight];
-	    isBlackChecked = new boolean[canvasWidth][canvasHeight];
+        isBlackChecked = new boolean[canvasWidth][canvasHeight];
         // Draw intensity histogram
         for (int i = 0; i < canvasWidth; i++) {
             for (int j = 0; j < canvasHeight; j++) {
@@ -487,49 +481,55 @@ public class YUVImageAnalyzer extends View {
     }
 
     private long evalLocalThreshold(final int i, final int j) {
-		final int gridSize = 11;
+        final int gridSize = 11;
 
-		/*
-		A *** B
-		C *** D
-		i = D - C - B + A
-		*/
+        /*
+          A *** B
+          C *** D
+          i = D - C - B + A
+          */
 
-		long A, B, C, D;
-		int x1 = i - (gridSize / 2) - 1;
-		int x2 = i + (gridSize / 2);
-		int y1 = j - (gridSize / 2) - 1;
-		int y2 = j + (gridSize / 2);
+        long A, B, C, D;
+        int x1 = i - (gridSize / 2) - 1;
+        int x2 = i + (gridSize / 2);
+        int y1 = j - (gridSize / 2) - 1;
+        int y2 = j + (gridSize / 2);
 
-		if (x2 >= canvasWidth) { x2 = canvasWidth - 1; }
-		if (y2 >= canvasHeight) { y2 = canvasHeight - 1; }
+        if (x2 >= canvasWidth) {
+            x2 = canvasWidth - 1;
+        }
+        if (y2 >= canvasHeight) {
+            y2 = canvasHeight - 1;
+        }
 
-		A = (x1 < 0 || y1 < 0) ? 0 : grayscaleImage.getIntegralFormPixel(x1, y1);
-		C = (x1 < 0) ? 0 : grayscaleImage.getIntegralFormPixel(x1, y2);
-		B = (y1 < 0) ? 0 : grayscaleImage.getIntegralFormPixel(x2, y1);
-		D = grayscaleImage.getIntegralFormPixel(x2, y2);
+        A = (x1 < 0 || y1 < 0) ? 0 : grayscaleImage.getIntegralFormPixel(x1, y1);
+        C = (x1 < 0) ? 0 : grayscaleImage.getIntegralFormPixel(x1, y2);
+        B = (y1 < 0) ? 0 : grayscaleImage.getIntegralFormPixel(x2, y1);
+        D = grayscaleImage.getIntegralFormPixel(x2, y2);
 
-		long threshold = D - C - B + A;
-		threshold /= gridSize * gridSize;
-		return threshold;
-	}
+        long threshold = D - C - B + A;
+        threshold /= gridSize * gridSize;
+        return threshold;
+    }
 
-	public void decodeYUV420SP(final byte[] dataYUV) {
+    public void decodeYUV420SP(final byte[] dataYUV) {
         Date date = new Date();
         long startTime = date.getTime();
 
-		readyForNextFrame = false;
+        readyForNextFrame = false;
         int[] rgbImage = new int[canvasWidth * canvasHeight];
 
-		for (int yp = 0; yp < canvasWidth * canvasHeight; yp++) {
-			int y = (0xff & ((int) dataYUV[yp])) - 16;
-			if (y < 0) { y = 0; }
-			rgbImage[yp] = y;
-		}
+        for (int yp = 0; yp < canvasWidth * canvasHeight; yp++) {
+            int y = (0xff & ((int) dataYUV[yp])) - 16;
+            if (y < 0) {
+                y = 0;
+            }
+            rgbImage[yp] = y;
+        }
 
         grayscaleImage = new GrayscaleImage(rgbImage, canvasWidth, canvasHeight);
 
         date = new Date();
         debugInfo.parseYUVImageTime = date.getTime() - startTime;
-	}
+    }
 }
